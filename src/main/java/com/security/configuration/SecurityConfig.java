@@ -3,6 +3,7 @@ package com.security.configuration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -23,38 +24,36 @@ public class SecurityConfig
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception
+    public SecurityFilterChain securityFilterChain(HttpSecurity http)  throws Exception
     {
         http
             .csrf(csrf -> csrf.disable())
 
-            .sessionManagement(session ->
-                    session.sessionCreationPolicy(
-                            SessionCreationPolicy.STATELESS
-                    )
-            )
+            .sessionManagement(session ->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(
+            .authorizeHttpRequests(auth -> auth.requestMatchers(
                             "/register",
-                            "/login","/h2-console/**","/logout"
-                    ).permitAll()
-
-                    .anyRequest().authenticated()
-            )
+                            "/login","/h2-console/**","/logout")
+            		.permitAll()
+            		
+            .requestMatchers(HttpMethod.GET,"/**")
+            .hasAnyRole("USER","ADMIN")
             
-            .headers(headers ->
-            headers.frameOptions(
-                    frame -> frame.disable()
-            )
-    )
+            .requestMatchers(HttpMethod.POST,"/**")
+            .hasAnyRole("ADMIN")
+            
+            .requestMatchers(HttpMethod.PUT,"/**")
+            .hasAnyRole("ADMIN")
+            
+            .requestMatchers(HttpMethod.DELETE,"/**")
+            .hasAnyRole("ADMIN")
+            
+                    .anyRequest().authenticated())
+            
+            .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+            
+            .addFilterBefore(jwtFilter,UsernamePasswordAuthenticationFilter.class);
 
-            .addFilterBefore(
-                    jwtFilter,
-                    UsernamePasswordAuthenticationFilter.class
-            );
-
-        return http.build();
+        	return http.build();
     }
 }

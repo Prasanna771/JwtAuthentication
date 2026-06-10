@@ -21,19 +21,28 @@ public class JwtUtil
                 SECRET.getBytes(StandardCharsets.UTF_8)
         );
     }
-
-    // Generate JWT Token
-    public String generateToken(String email)
+    
+    public String extractRole(String token)
     {
+    	
+    	return extractAllClaims(token)
+    			.get("role",String.class);
+    }
 
+    // Generate JWT Access Token
+    public String generateToken(String email, String role)
+    {
         return Jwts.builder()
-                .subject(email)
-                .issuedAt(new Date())
-                .expiration(
+                .claims()
+                    .subject(email)
+                    .add("role", role)
+                    .issuedAt(new Date())
+                    .expiration(
                         new Date(
-                                System.currentTimeMillis() + 60000
+                            System.currentTimeMillis() + 120000
                         )
-                )
+                    )
+                    .and()
                 .signWith(getSignKey())
                 .compact();
     }
@@ -83,11 +92,12 @@ public class JwtUtil
         }
     }
     
-    
+    // Generate Refresh Token
     public String generateRefreshToken(String email)
     {
         return Jwts.builder()
                 .subject(email)
+              
                 .issuedAt(new Date())
                 .expiration(
                     new Date(
@@ -98,4 +108,6 @@ public class JwtUtil
                 .signWith(getSignKey())
                 .compact();
     }
+    
+    
 }
